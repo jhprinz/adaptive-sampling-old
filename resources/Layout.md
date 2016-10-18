@@ -1,4 +1,4 @@
-# Adaptive Sampling Framwork Layout
+# Adaptive Sampling Framework Layout
 
 Adaptive Sampling MD (AMD) is the concept of collecting short MD simultions in an a guided way dependend on the history of collected sampled, i.e. simulated trajectories.
 
@@ -17,6 +17,54 @@ This engine should work indpendently of the brain and be used as a standalone qu
 #### 3. The bookkeeping "the storage"
 
 The place where all generated information is kept for easy access to the brain. Everything that the engine generates is stored or referenced here. At best, also the brain will store all issued simulation and generated models that were used to make decisions about the progress. The storage should also run independently and allow to store data without using an engine or adaptive sampling. Similar to an extended trajectory format.
+
+### General layout
+
+
+
+
+* once a node is empty then a new simulation is started with simulation parameter according to the top element in the queue
+* brain overwrites to whole queue
+* transfer output of brain to local continuously
+* option transfer all simulation output to local when simulation is finished
+* option for brain to run on remote or on local
+* option for brain to run on one CPU or whole Node, ability to specify memory requirements for brain
+* ability to submit a job before the current job finished
+* smart checkpointing: recognizes what was finished before, recognizes what data are still on remote, continues further in asynchronous sampling
+
+![Adaptive sampling scheme](./figs/adaptive_sampling_scheme.png "Adaptive sampling scheme")
+missing in image:
+
+* remote/local separation
+
+
+### Other Design specifications 
+**Performance**
+
+95% resource utilisation effectivity for 1000 simulations in parallel, each 10 min long
+
+**Stage 1: Toy model**
+
+* implementation of asynchronous functionality
+* able to run at least 1000 asynchronous simulation at the same time
+* runs on Stampede and AWS
+* instead MD just an python toy script
+* brain just a python toy script
+* no performance necessary
+
+**Stage 2: Clementi group algorithm**
+
+* implementation of asynchronous functionality 
+* runs on davinci, TITAN and AWS
+* MD with Gromacs, using GPU
+* Simulation stage consists of three steps, grompp, mdrun, post-processing (python script)
+* able to import pyemma for post-processing and brain
+
+**Stage 3: Frank group algorithm**
+
+* implementation of asynchronous functionality
+* runs on GPUGRID and AWS
+* MD with ACEMD (using GPU)
 
 
 ## The Components
