@@ -22,44 +22,8 @@ worker_process_init.connect(_redo_uuid)
 
 
 @app.task
-def add(x, y):
-    return x + y
-
-
-@app.task
 def generate(engine, template, ensemble):
     engine.initialize('CPU')
     traj = engine.generate(template, ensemble.can_append)
     return traj
-
-
-@app.task
-def uuid(obj):
-    return obj.__uuid__
-
-
-@app.task
-def identity(obj):
-    return obj
-
-
-@app.task
-def attr(obj, attr):
-    return getattr(obj, attr)
-
-
-@app.task
-def ls(obj):
-    return dir(obj)
-
-
-@app.task
-def temp(obj):
-    return obj._lazy.values()[0].__dict__
-
-
-@app.task
-def exev(template, s1, s2):
-    exec(s1)
-    return eval(s2)
 

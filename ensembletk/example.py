@@ -10,7 +10,7 @@ from radical.ensemblemd import ResourceHandle
 # ------------------------------------------------------------------------------
 # Set default verbosity
 
-if os.environ.get('RADICAL_ENTK_VERBOSE') == None:
+if not os.environ.get('RADICAL_ENTK_VERBOSE'):
     os.environ['RADICAL_ENTK_VERBOSE'] = 'REPORT'
 
 
