@@ -61,8 +61,8 @@ import mdtraj as md
 
 @app.task
 def generate(dcd_filename, steps, system_xml, integrator_xml, initial_pdb, platform, properties):
-    # fix to send pdb file as string and not file
-    pdb=md.load(Turn_Str_to_stream(initial_pdb))
+    # fix to send pdb file as string and not filename
+    pdb=md.load(initial_pdb)
     
     simulation = simtk.openmm.app.Simulation(
         topology=pdb.topology.to_openmm(),
@@ -166,6 +166,14 @@ just starting, no configuration necessary. The purpose of this server is not to 
 ```
 redis-server
 ```
+
+This runs in stand-alone mode which will kill the server when you close the window. It can also be run as a deamon in the background.
+
+Or course you can use accounts with username and password, but that might be for later.
+
+This might help in setting up redis [tutorial](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-redis)
+
+
 
 ### Run a single worker
 

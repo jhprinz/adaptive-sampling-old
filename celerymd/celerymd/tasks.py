@@ -1,71 +1,93 @@
-from celery import Celery
-from celery.signals import worker_process_init, celeryd_init
 import logging
 
-from sshtunnel import SSHTunnelForwarder
+from celery import Celery
+from celery.signals import worker_process_init, celeryd_init, worker_shutdown
 
-from celery.signals import worker_init, worker_shutdown
+from util import _redo_uuid
+import tunnel
+
+import os
+
+import simtk.openmm
+import simtk.openmm.app
+import mdtraj as md
+
 
 logger = logging.getLogger(__name__)
 
-db_server = 'shark.imp.fu-berlin.de'
-redis_db_port = 6379
+# ------------------------------------------------------------------------------
+# CONFIG
+# ------------------------------------------------------------------------------
 
-redis_server = (db_server, 22)
-node_remote = ('localhost', redis_db_port)
+# TODO: Should be move to config file at some point
 
-node_port = 6383  # can be any port. Needs to be the same as in redis worker
+redis_server = 'jprinz@shark.imp.fu-berlin.de:6379'
+local_node_port = 6383  # the port where the worker connects locally
 
-redis_server_user = 'jprinz'
+
+# read from file. This is kind of bad, but ssh_tunnel does not support
+# known_hosts. Need to find a way around that.
 keyfile = '/Users/jan-hendrikprinz/.ssh/known_hosts'
-
 ssh_password = open('pw').read()
 
-server_str = 'redis://localhost:%d/0' % node_port
+
+# ------------------------------------------------------------------------------
+# CREATE CELERY APP
+# ------------------------------------------------------------------------------
+
+server_str = 'redis://localhost:%d/0' % local_node_port
 
 app = Celery('tasks', backend=server_str, broker=server_str)
 app.config_from_object('celeryconfig')
 
-tunnel_server = SSHTunnelForwarder(
-    db_server,
-    # ssh_host_key=known_hosts_line,
-    ssh_username=redis_server_user,
-    ssh_password=ssh_password,
-    local_bind_address=('127.0.0.1', node_port),
-    remote_bind_address=('127.0.0.1', redis_db_port)
-)
-
-
-# This will force each child process to have a seperate INSTANCE_UUID
-# only necessary if you fork your processes in which case python
-# will reuse exising variables that _seem_ untouched and the ops package
-# import will not be executed again
-# on remote machine this should actually not be necessary
-
-def _redo_uuid(**kwargs):
-    import openpathsampling.netcdfplus as npl
-    # logger.info('OLD UUID `%s`' % npl.StorableObject.INSTANCE_UUID)
-    npl.StorableObject.initialize_uuid()
-    logger.info('NEW UUID `%s`' % npl.StorableObject.get_instance_uuid())
-
 # need to use registered instance for sender argument.
 worker_process_init.connect(_redo_uuid)
 
+# Create a function to initialize a SHH tunnel
+# this works but I think this way is legacy and has problems shutting down
+# gracefully. Will be reimplemented using a custom `bootstep`
 
-def _open_tunnel(**kwargs):
-    logger.info('RUNNING TUNNEL')
-    tunnel_server.start()
-    logger.info('tunnel established at port %s' % str(tunnel_server.local_bind_address))
+tunnel.create_server(
+    redis_server,
+    ssh_password,
+    local_node_port)
+
+celeryd_init.connect(tunnel.open_tunnel)
+worker_shutdown.connect(tunnel.close_tunnel)
 
 
-def _close_tunnel(**kwargs):
-    logger.info('Shutting down tunnel')
-    tunnel_server.stop()
-    logger.info('Tunnel removed')
+# ------------------------------------------------------------------------------
+# DEFINE TASKS
+# ------------------------------------------------------------------------------
+
+@app.task
+def directory(mypath):
+    return os.listdir(mypath)
 
 
-celeryd_init.connect(_open_tunnel)
-worker_shutdown.connect(_close_tunnel)
+@app.task
+def generate(
+        dcd_filename,
+        steps,
+        system_xml,
+        integrator_xml,
+        initial_pdb,
+        platform,
+        properties):
+    # fix to send pdb file as string and not filename
+    pdb = md.load(initial_pdb)
+
+    simulation = simtk.openmm.app.Simulation(
+        topology=pdb.topology.to_openmm(),
+        system=simtk.openmm.XmlSerializer.deserialize(system_xml),
+        integrator=simtk.openmm.XmlSerializer.deserialize(integrator_xml),
+        platform=simtk.openmm.Platform.getPlatformByName(platform),
+        platformProperties=properties
+    )
+    simulation.reporters.append(simtk.openmm.app.DCDReporter(dcd_filename, 1000))
+    simulation.step(steps)
+
+    return {'Results': 'something'}
 
 
 @app.task(name='openpathsampling.engine.celery.tasks.generate')
@@ -78,53 +100,3 @@ def generate(engine, template, ensemble, init_args=None, init_kwargs=None):
     engine.initialize(*init_args, **init_kwargs)
     traj = engine.generate(template, ensemble.can_append)
     return traj
-
-
-@app.task(name='openpathsampling.engine.celery.tasks.list_cache')
-def list_cache():
-    """
-    Return a list of UUIDs containing all objects present in the cache
-
-    This is useful for checking which objects should actually be
-    transferred. This is not save yet, becuase in the meantime the
-    cache could loose some objects in which case you will not transmit these.
-    This needs a function to lock the cache in that time and release after
-    transmission
-
-
-    Returns
-    -------
-    list of UUID
-        the list of UUIDs of the objects that do not beed to be transmitted
-    """
-    return []
-
-@app.task
-def uuid(obj):
-    return obj.__uuid__
-
-@app.task
-def identity(obj):
-    return obj
-
-
-@app.task
-def attr(obj, attr):
-    return getattr(obj, attr)
-
-
-@app.task
-def ls(obj):
-    return dir(obj)
-
-
-@app.task
-def temp(obj):
-    return obj._lazy.values()[0].__dict__
-
-
-@app.task
-def exev(template, s1, s2):
-    exec(s1)
-    return eval(s2)
-
