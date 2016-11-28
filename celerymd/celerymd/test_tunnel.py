@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # TODO: Should be move to config file at some point
 
 redis_server = 'jprinz@sheep.imp.fu-berlin.de:6379'
-local_node_port = 6383  # the port where the worker connects locally
+local_node_port = 6384  # the port where the worker connects locally
 
 # read from file. This is kind of bad, but ssh_tunnel does not support
 # known_hosts. Need to find a way around that.
@@ -41,18 +41,28 @@ for line in known_hosts_file:
 # this works but I think this way is legacy and has problems shutting down
 # gracefully. Will be reimplemented using a custom `bootstep`
 
-tunnel.create_server(
+# tunnel.create_server(
+#     redis_server,
+#     local_node_port,
+#     ssh_password=ssh_password,
+#     # ssh_host_key=ssh_host_key
+# )
+#
+#
+# tunnel.open_tunnel()
+#
+# print tunnel.tunnel_server
+#
+# time.sleep(3)
+#
+# tunnel.close_tunnel()
+
+tunnel = tunnel.BashTunnel(
     redis_server,
-    local_node_port,
-    ssh_password=ssh_password,
-    # ssh_host_key=ssh_host_key
-)
+    local_node_port)
 
-
-tunnel.open_tunnel()
-
-print tunnel.tunnel_server
+tunnel.open()
 
 time.sleep(3)
 
-tunnel.close_tunnel()
+tunnel.close()

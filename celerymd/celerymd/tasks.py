@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # TODO: Should be move to config file at some point
 
 redis_server = 'jprinz@sheep.imp.fu-berlin.de:6379'
-local_node_port = 6383  # the port where the worker connects locally
+local_node_port = 6384  # the port where the worker connects locally
 
 
 # read from file. This is kind of bad, but ssh_tunnel does not support
@@ -56,15 +56,20 @@ worker_process_init.connect(_redo_uuid)
 # this works but I think this way is legacy and has problems shutting down
 # gracefully. Will be reimplemented using a custom `bootstep`
 
-tunnel.create_server(
+# tunnel.create_server(
+#     redis_server,
+#     local_node_port,
+#     ssh_password=ssh_password,
+#     # ssh_host_key=ssh_host_key
+# )
+
+tun = tunnel.BashTunnel(
     redis_server,
-    local_node_port,
-    ssh_password=ssh_password,
-    # ssh_host_key=ssh_host_key
+    local_node_port
 )
 
-celeryd_init.connect(tunnel.open_tunnel)
-worker_shutdown.connect(tunnel.close_tunnel)
+celeryd_init.connect(tun.open)
+worker_shutdown.connect(tun.close)
 
 
 # ------------------------------------------------------------------------------
