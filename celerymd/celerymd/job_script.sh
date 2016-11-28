@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH -J testjob
-#SBATCH -D /storage/mi/jprinz
+#SBATCH -J test_celery
+#SBATCH -D /hone/jprinz
 #SBATCH -o testjob.%j.out
 #SBATCH -p micro
 #SBATCH --nodes=1
