@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -J test_celery
-#SBATCH -D /hone/jprinz
-#SBATCH -o testjob.%j.out
+#SBATCH -J test-celery
+#SBATCH -D /home/jprinz/NO_BACKUP/
+#SBATCH -o celery.%j.out
 #SBATCH -p micro
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
