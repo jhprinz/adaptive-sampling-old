@@ -22,16 +22,10 @@ def create_server(
     redis_server_user, redis_server, redis_port = \
         reg_ex.findall(redis_server)[0]
 
-    print redis_server, redis_server_user, redis_port
-
-    print ssh_password
-    print ssh_host_key
-
     tunnel_server = SSHTunnelForwarder(
         redis_server,
         ssh_username=redis_server_user,
         ssh_password=ssh_password,
-        ssh_host_key=ssh_host_key,
         local_bind_address=('127.0.0.1', local_node_port),
         remote_bind_address=('127.0.0.1', int(redis_port))
     )

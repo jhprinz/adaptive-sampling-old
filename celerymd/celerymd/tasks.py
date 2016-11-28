@@ -60,7 +60,7 @@ tunnel.create_server(
     redis_server,
     local_node_port,
     ssh_password=ssh_password,
-    ssh_host_key=ssh_host_key
+    # ssh_host_key=ssh_host_key
 )
 
 celeryd_init.connect(tunnel.open_tunnel)
