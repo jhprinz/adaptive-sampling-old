@@ -21,14 +21,23 @@ logger = logging.getLogger(__name__)
 
 # TODO: Should be move to config file at some point
 
-redis_server = 'jprinz@shark.imp.fu-berlin.de:6379'
+redis_server = 'jprinz@sheep.imp.fu-berlin.de:6379'
 local_node_port = 6383  # the port where the worker connects locally
 
 
 # read from file. This is kind of bad, but ssh_tunnel does not support
 # known_hosts. Need to find a way around that.
-keyfile = '/Users/jan-hendrikprinz/.ssh/known_hosts'
-ssh_password = open('pw').read()
+
+keyfile = os.path.join(os.environ['HOME'], '.ssh', 'known_hosts')
+ssh_password = open('pw.pw').read()
+
+known_hosts_file = open(keyfile).readlines()
+
+ssh_host_key = None
+
+for line in known_hosts_file:
+    if 'sheep.imp' in line:
+        ssh_host_key = line.strip()
 
 
 # ------------------------------------------------------------------------------
@@ -49,8 +58,10 @@ worker_process_init.connect(_redo_uuid)
 
 tunnel.create_server(
     redis_server,
-    ssh_password,
-    local_node_port)
+    local_node_port,
+    ssh_password=ssh_password,
+    ssh_host_key=ssh_host_key
+)
 
 celeryd_init.connect(tunnel.open_tunnel)
 worker_shutdown.connect(tunnel.close_tunnel)
