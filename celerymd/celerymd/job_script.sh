@@ -12,5 +12,8 @@
 
 hostname
 date
+
+
+bash
 cd /home/jprinz/celery/adaptive-sampling/celerymd/celerymd
 celery worker -A tasks --concurrency=1
