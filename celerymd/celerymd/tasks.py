@@ -28,16 +28,16 @@ local_node_port = 6384  # the port where the worker connects locally
 # read from file. This is kind of bad, but ssh_tunnel does not support
 # known_hosts. Need to find a way around that.
 
-keyfile = os.path.join(os.environ['HOME'], '.ssh', 'known_hosts')
-ssh_password = open('pw.pw').read()
+# keyfile = os.path.join(os.environ['HOME'], '.ssh', 'known_hosts')
+# ssh_password = open('pw.pw').read()
 
-known_hosts_file = open(keyfile).readlines()
+# known_hosts_file = open(keyfile).readlines()
 
-ssh_host_key = None
-
-for line in known_hosts_file:
-    if 'sheep.imp' in line:
-        ssh_host_key = line.strip()
+# ssh_host_key = None
+#
+# for line in known_hosts_file:
+#     if 'sheep.imp' in line:
+#         ssh_host_key = line.strip()
 
 
 # ------------------------------------------------------------------------------
