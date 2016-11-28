@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH -J test-celery
-#SBATCH -D /home/jprinz/NO_BACKUP/
+#SBATCH -D /home/jprinz/NO_BACKUP
 #SBATCH -o celery.%j.out
-#SBATCH -p micro
+#SBATCH -p small
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=500M
