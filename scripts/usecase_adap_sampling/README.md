@@ -60,7 +60,8 @@ We add an additional pipeline (ensemble size + 1) which mimics the analysis task
 ```bash
 cd $HOME
 cd radical.ensemblemd/examples/usecase_adap_sampling
-RADICAL_ENTK_VERBOSE=info python runme.py
+RADICAL_ENTK_VERBOSE=info 
+python runme.py
 ```
 
 I have added comments to the source code for explanations. Please create an issue/ping me if clarification is required.
