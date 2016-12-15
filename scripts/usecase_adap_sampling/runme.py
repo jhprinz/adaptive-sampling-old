@@ -19,7 +19,7 @@ This example executes on localhost but can be extended to run on remote machine 
 the details in the resource handle.
 '''
 
-from radical.ensemblemd import EoP, AppManager, Kernel, ResourceHandle
+from radical.ensemblemd import EoP, Kernel, ResourceHandle
 
 from echo import echo_kernel
 from randval import rand_kernel
