@@ -1,7 +1,7 @@
 #### Access the DB using
 
 ```bash
-export RADICAL_PILOT_DBURL="ensembletk.imp.fu-berlin.de:27017/rp"
+export RADICAL_PILOT_DBURL="mongodb://ensembletk.imp.fu-berlin.de:27017/rp"
 ```
 
 #### Next steps

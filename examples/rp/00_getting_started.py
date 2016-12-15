@@ -30,7 +30,6 @@ if __name__ == '__main__':
 
     # use the resource specified as argument, fall back to localhost
     if len(sys.argv) > 2:
-        resource = None
         report.exit('Usage:\t%s [resource]\n\n' % sys.argv[0])
     elif len(sys.argv) == 2:
         resource = sys.argv[1]
