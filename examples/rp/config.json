@@ -142,9 +142,9 @@
     "cores": 1
   },
   "fub.allegro": {
-    "project": null,
+    "project": "test-01",
     "queue": "big",
-    "schema": "gsissh",
+    "schema": "ssh",
     "cores": 16
   }
 }

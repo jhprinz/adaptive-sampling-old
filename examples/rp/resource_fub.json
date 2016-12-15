@@ -1,6 +1,6 @@
 {
-  "stampede": {
-    "description": "The FUB 'Allegro' cluster at TACC (http://www.allegro.imp.fu-berlin.de).",
+  "allegro": {
+    "description": "The FUB 'Allegro' cluster at IMP (http://www.allegro.imp.fu-berlin.de).",
     "notes": "Always set the ``project`` attribute in the ComputePilotDescription or the pilot will fail.",
     "schemas": [
       "gsissh",

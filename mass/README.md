@@ -12,4 +12,5 @@ SLURM Skript to run simple test, but I think that should work...
 
 ```bash
 ~/miniconda2/lib/python2.7/site-packages/radical/pilot/configs
+~/myenv/lib/python2.7/site-packages/radical/pilot/configs
 ```
