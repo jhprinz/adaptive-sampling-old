@@ -19,7 +19,7 @@ This example executes on localhost but can be extended to run on remote machine 
 the details in the resource handle.
 '''
 
-from radical.entk import EoP, AppManager, Kernel, ResourceHandle
+from radical.ensemblemd import EoP, AppManager, Kernel, ResourceHandle
 
 from echo import echo_kernel
 from randval import rand_kernel
@@ -138,7 +138,7 @@ if __name__ == '__main__':
         # project =,
         # queue=,
         walltime=10,
-        database_url='mongodb://rp:rp@ds015335.mlab.com:15335/rp')
+        database_url='mongodb://ensembletk.imp.fu-berlin.de:27017/rp')
 
     # Submit request for resources + wait till job becomes Active
     res.allocate(wait=True)
