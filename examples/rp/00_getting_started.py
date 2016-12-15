@@ -1,26 +1,26 @@
 #!/usr/bin/env python
 
+__copyright__ = 'Copyright 2013-2014, http://radical.rutgers.edu'
+__license__   = 'MIT'
+
 import os
 import sys
+
+verbose  = os.environ.get('RADICAL_PILOT_VERBOSE', 'REPORT')
+os.environ['RADICAL_PILOT_VERBOSE'] = verbose
 
 import radical.pilot as rp
 import radical.utils as ru
 
-__copyright__ = 'Copyright 2013-2014, http://radical.rutgers.edu'
-__license__ = 'MIT'
-
-verbose = os.environ.get('RADICAL_PILOT_VERBOSE', 'REPORT')
-os.environ['RADICAL_PILOT_VERBOSE'] = verbose
-
 
 # ------------------------------------------------------------------------------
 #
-#   READ the RADICAL-Pilot documentation: http://radicalpilot.readthedocs.org/
+# READ the RADICAL-Pilot documentation: http://radicalpilot.readthedocs.org/
 #
 # ------------------------------------------------------------------------------
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #
 if __name__ == '__main__':
 
@@ -29,12 +29,9 @@ if __name__ == '__main__':
     report.title('Getting Started (RP version %s)' % rp.version)
 
     # use the resource specified as argument, fall back to localhost
-    if len(sys.argv) > 2:
-        report.exit('Usage:\t%s [resource]\n\n' % sys.argv[0])
-    elif len(sys.argv) == 2:
-        resource = sys.argv[1]
-    else:
-        resource = 'local.localhost'
+    if   len(sys.argv)  > 2: report.exit('Usage:\t%s [resource]\n\n' % sys.argv[0])
+    elif len(sys.argv) == 2: resource = sys.argv[1]
+    else                   : resource = 'local.localhost'
 
     # Create a new session. No need to try/except this: if session creation
     # fails, there is not much we can do anyways...
@@ -48,8 +45,7 @@ if __name__ == '__main__':
 
         # read the config used for resource details
         report.info('read config')
-        config = ru.read_json(
-            '%s/config.json' % os.path.dirname(os.path.abspath(__file__)))
+        config = ru.read_json('%s/config.json' % os.path.dirname(os.path.abspath(__file__)))
         report.ok('>>ok\n')
 
         report.header('submit pilots')
@@ -60,18 +56,19 @@ if __name__ == '__main__':
         # Define an [n]-core local pilot that runs for [x] minutes
         # Here we use a dict to initialize the description object
         pd_init = {
-            'resource': resource,
-            'runtime': 15,  # pilot runtime (min)
-            'exit_on_error': True,
-            'project': config[resource]['project'],
-            'queue': config[resource]['queue'],
-            'access_schema': config[resource]['schema'],
-            'cores': config[resource]['cores'],
-        }
+                'resource'      : resource,
+                'runtime'       : 15,  # pilot runtime (min)
+                'exit_on_error' : True,
+                'project'       : config[resource]['project'],
+                'queue'         : config[resource]['queue'],
+                'access_schema' : config[resource]['schema'],
+                'cores'         : config[resource]['cores'],
+                }
         pdesc = rp.ComputePilotDescription(pd_init)
 
         # Launch the pilot.
         pilot = pmgr.submit_pilots(pdesc)
+
 
         report.header('submit units')
 
@@ -82,11 +79,12 @@ if __name__ == '__main__':
         # Create a workload of ComputeUnits.
         # Each compute unit runs '/bin/date'.
 
-        n = 8  # number of units to run
+        n = 8   # number of units to run
         report.info('create %d unit description(s)\n\t' % n)
 
         cuds = list()
         for i in range(0, n):
+
             # create a new CU description, and fill it.
             # Here we don't use dict initialization.
             cud = rp.ComputeUnitDescription()
@@ -100,9 +98,10 @@ if __name__ == '__main__':
         # assigning ComputeUnits to the ComputePilots.
         umgr.submit_units(cuds)
 
-        # Wait for all compute units to reach a final state.
+        # Wait for all compute units to reach a final state (DONE, CANCELED or FAILED).
         report.header('gather results')
         umgr.wait_units()
+
 
     except Exception as e:
         # Something unexpected happened in the pilot code above
@@ -125,4 +124,4 @@ if __name__ == '__main__':
     report.header()
 
 
-# ------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
