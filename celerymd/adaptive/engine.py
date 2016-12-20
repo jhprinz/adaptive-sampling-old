@@ -54,7 +54,6 @@ class Engine(object):
             'target': 'staging:///%s' % target,
             'action': rp.TRANSFER}
 
-
     def get_cud(self, pdb_file):
         """
         Create a compute unit description to be run
@@ -82,6 +81,7 @@ class ACEMDEngine(Engine):
 
     @property
     def executable(self):
+        # use bash for multiple commands
         return 'bin/bash'
         # return '/usr/bin/acemd'
 
@@ -126,16 +126,18 @@ class ACEMDEngine(Engine):
         # question: how to run multiple commands with MPU
 
         # might use mdconvert from mdtraj for now
-
         args = [
             'mdconvert'
             '-o', 'initial.pdb',
             '-i', '%d' % frame,
             trajectory_file,
             self.pdb_file,
-            '&&'
         ]
 
+        # and
+        args += ['&&']
+
+        # acemd run
         args += [
             'acemd',
             self.conf_file

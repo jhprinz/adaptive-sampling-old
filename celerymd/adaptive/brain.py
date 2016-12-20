@@ -62,7 +62,7 @@ class MDStatus(object):
         self.pilot_mngr = pilot_mngr
         self.unit_mngr = unit_mngr
 
-        self.cus = dict()   # uid : ComputeUnit
+        self.cus = dict()   # {uid : ComputeUnit}
 
         self.cus_pending = set()
         self.cus_running = set()
