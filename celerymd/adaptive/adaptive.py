@@ -44,7 +44,7 @@ if __name__ == '__main__':
     modeller = Modeller('option1', 'option2')
 
     # we need the brain that creates new simulation jobs from the current model
-    brain = Brain('option1', 'option2')
+    brain = Brain(engine)
 
     # the adaptive cycle runs as many simulations in parallel as possible
     # using the brain. Once we have gather N new transitions we trigger a
@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
         # Define an [n]-core local pilot that runs for [x] minutes
         # Here we use a dict to initialize the description object
-        pd_simulation = {
+        pd = {
             'resource': resource,
             'runtime': 15,  # pilot runtime (min)
             'exit_on_error': True,
@@ -101,27 +101,10 @@ if __name__ == '__main__':
             'access_schema': config[resource]['schema'],
             'cores': config[resource]['cores'],
         }
-        pdesc_simulation = rp.ComputePilotDescription(pd_simulation)
-
-        # Define an [n]-core local pilot that runs for [x] minutes
-        # Here we use a dict to initialize the description object
-        # pd_modeling = {
-        #     'resource': resource,
-        #     'runtime': 15,  # pilot runtime (min)
-        #     'exit_on_error': True,
-        #     'project': config[resource]['project'],
-        #     'queue': config[resource]['queue'],
-        #     'access_schema': config[resource]['schema'],
-        #     'cores': config[resource]['cores'],
-        # }
-        # pdesc_modeling = rp.ComputePilotDescription(pd_modeling)
-
+        pdesc = rp.ComputePilotDescription(pd)
 
         # Launch the pilot.
-        pilot_simulation = pmgr.submit_pilots(pdesc_simulation)
-
-        # we use the same
-        pilot_analysis = pilot_simulation
+        pilot = pmgr.submit_pilots(pdesc)
 
         # Create a workload of char-counting a simple file.  We first create the
         # file right here, and stage it to the pilot 'shared_data' space
@@ -134,8 +117,7 @@ if __name__ == '__main__':
         # {'source': 'file://%s/input.dat' % os.getcwd(),
         #  'target': 'staging:///input.dat',
         #  'action': rp.TRANSFER}
-        stage_data = engine.get_staging()
-        pilot_simulation.stage_in(stage_data)
+        pilot.stage_in(engine.get_staging())
 
         # TODO: can you add multiple stage_ins?
 
@@ -144,13 +126,10 @@ if __name__ == '__main__':
         report.header('submit units')
 
         # Register the ComputePilot in a UnitManager object.
-        umgr_simulation = rp.UnitManager(session=session)
-        umgr_analysis = rp.UnitManager(session=session)
-        umgr_simulation.add_pilots(pilot_simulation)
-        umgr_analysis.add_pilots(pilot_analysis)
+        umgr = rp.UnitManager(session=session)
+        umgr.add_pilots(pilot)
 
-        umgr_simulation.register_callback(brain.unit_cb)
-        umgr_analysis.register_callback(brain.analysis_cb)
+        umgr.register_callback(brain.callback)
         running = True
 
         # we now enter the main adaptive loop
@@ -164,10 +143,16 @@ if __name__ == '__main__':
         # 2. check if enough new data has been acquired
         # 3. submit an analysis job
         while running:
-            if len(simulation_cus) < min_stack_size:
+            # 1. refill simulation stack from current model / brain
+            if len(brain.simulation_cus) < min_stack_size:
                 # add new simulations
                 cu_descs = brain.get_simulation_cu(simulation_chunk_size)
-                simulation_cus += umgr_simulation.submit_units(cu_descs)
+                simulation_cus += umgr.submit_units(cu_descs)
+
+            if brain.new_trajectories > 300:  # run_analysis_threshold
+                # submit analysis job
+                brain.analyze()
+                umgr.cancel_units({'not-started-units'})
 
         n = 128  # number of units to run
         report.info('create %d unit description(s)\n\t' % n)
@@ -183,15 +168,16 @@ if __name__ == '__main__':
                                  'target': 'input.dat',
                                  'action': rp.LINK
                                  }
+
             cuds.append(cud)
             report.progress()
+
         report.ok('>>ok\n')
 
         # Submit the previously created ComputeUnit descriptions to the
         # PilotManager. This will trigger the selected scheduler to start
         # assigning ComputeUnits to the ComputePilots.
 
-        # Wait for all compute units to reach a final state (DONE, CANCELED or FAILED).
         report.header('gather results')
         umgr.wait_units()
 
@@ -203,7 +189,6 @@ if __name__ == '__main__':
 
         # delete the sample input files
         os.system('rm input.dat')
-
 
     except Exception as e:
         # Something unexpected happened in the pilot code above
