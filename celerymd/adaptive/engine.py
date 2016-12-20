@@ -82,7 +82,12 @@ class ACEMDEngine(Engine):
 
     @property
     def executable(self):
-        return '/usr/bin/acemd'
+        return 'bin/bash'
+        # return '/usr/bin/acemd'
+
+    @property
+    def arguments(self):
+        return ['-l', '-c']
 
     def get_cud_pdb(self, pdb_file):
         """
@@ -116,9 +121,29 @@ class ACEMDEngine(Engine):
         -------
 
         """
+
+        # todo: add the extraction of a single frame using a little python tool
+        # question: how to run multiple commands with MPU
+
+        # might use mdconvert from mdtraj for now
+
+        args = [
+            'mdconvert'
+            '-o', 'initial.pdb',
+            '-i', '%d' % frame,
+            trajectory_file,
+            self.pdb_file,
+            '&&'
+        ]
+
+        args += [
+            'acemd',
+            self.conf_file
+        ]
+
         cud = rp.ComputeUnitDescription()
         cud.executable = self.executable
-        cud.arguments = self.arguments + [os.path.basename(self.conf_file)]
+        cud.arguments = args + self.arguments + [os.path.basename(self.conf_file)]
         cud.input_staging = [
             self.link_from_stage(self.conf_file),
             self.link_from_stage(self.pdb_file),
