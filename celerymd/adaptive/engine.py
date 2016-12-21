@@ -2,7 +2,7 @@
 
 import radical.pilot as rp
 
-from bash import BashCommand
+from command import BashCommand
 
 import os
 

@@ -15,7 +15,7 @@ os.environ['RADICAL_PILOT_DBURL'] = path_to_db
 import radical.pilot as rp
 import radical.utils as ru
 
-# import components
+# import adaptive components
 
 from engine import ACEMDEngine
 from brain import Brain
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         resource=cluster,
         report=report)
 
-    brain = Brain(cluster)
+    brain = Brain(cluster)  # this needs to be smarter
 
     with cluster:
         report.ok('>>ok\n')
@@ -64,38 +64,18 @@ if __name__ == '__main__':
 
         # we now enter the main adaptive loop
 
-        # Parameters
-
-        min_stack_size = 20
-        simulation_chunk_size = 10
-
-        # 1. refill simulation stack from current model / brain
-        # 2. check if enough new data has been acquired
-        # 3. submit an analysis job
-        while running:
+        while brain.running:
+            # question: How does this work with callbacks
+            cluster.umgr.wait(5)  # wait 5 seconds before checking again
             # 1. refill simulation stack from current model / brain
-            if len(brain.simulation_cus) < min_stack_size:
-                # add new simulations
-                cu_descs = brain.get_simulation_cu(simulation_chunk_size)
-                simulation_cus += umgr.submit_units(cu_descs)
-
-            if brain.new_trajectories > 300:  # run_analysis_threshold
-                # submit analysis job
-                brain.analyze()
-                umgr.cancel_units({'not-started-units'})
 
         # report.info('create %d unit description(s)\n\t' % n)
         # report.progress()
         # report.ok('>>ok\n')
 
-        # Submit the previously created ComputeUnit descriptions to the
-        # PilotManager. This will trigger the selected scheduler to start
-        # assigning ComputeUnits to the ComputePilots.
-
-        report.header('gather results')
-        # umgr.wait_units()
-
-        report.info('\n')
+        # report.header('gather results')
+        #
+        # report.info('\n')
         # for unit in units:
         #     report.plain('  * %s: %s, exit: %3s, out: %s\n'
         #                  % (unit.uid, unit.state[:4],

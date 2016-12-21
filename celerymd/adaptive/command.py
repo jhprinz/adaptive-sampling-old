@@ -12,7 +12,7 @@ class Command(object):
             raise ValueError('multiplication only with integers')
 
     def __str__(self):
-        return ' '.join(self)
+        return self.bash_str
 
     def __call__(self, *args, **kwargs):
         """
@@ -22,12 +22,8 @@ class Command(object):
         pass
 
     @property
-    def bash(self):
-        return self.bash_exec + list(self)
-
-    @property
     def bash_str(self):
-        return ' '.join(self.bash_exec + list(self))
+        return self.bash_exec + ' ' + ' '.join(self.bash_args + list(self))
 
     def __iter__(self):
         return iter([])
@@ -72,7 +68,8 @@ class StagingCommand(Command):
         self.staging = staging
 
         if mode not in [rp.STAGING_INPUT, rp.STAGING_OUTPUT]:
-            raise ValueError('Can only use rp.STAGING_INPUT or rp.STAGING_OUTPUT.')
+            raise ValueError(
+                'Can only use rp.STAGING_INPUT or rp.STAGING_OUTPUT.')
 
     @property
     def source(self):

@@ -1,34 +1,8 @@
 import radical.pilot as rp
 import os
 
-from bash import BashCommand, StagingCommand
+from command import BashCommand, StagingCommand
 from util import get_type
-
-class AddSharedFileCommand(BashCommand):
-    def __init__(self, executable, args, input_staging=None, output_staging=None):
-        super(AddSharedFileCommand, self).__init__(executable, args)
-        self.executable = executable
-        self.args = args
-        if input_staging is None:
-            self._input_staging = []
-        else:
-            self._input_staging = input_staging
-
-        if output_staging is None:
-            self._output_staging = []
-        else:
-            self._output_staging = output_staging
-
-    def __iter__(self):
-        return iter([self.executable] + list(self.args))
-
-    @property
-    def input_staging(self):
-        return self._input_staging
-
-    @property
-    def output_staging(self):
-        return self._output_staging
 
 
 class Resource(object):
@@ -93,7 +67,7 @@ class Resource(object):
             raise NotImplementedError(
                 'copying from `%s` to `%s` is not implemented yet.' % (st, tt))
 
-    def mv(self, source, target=None, stage=None):
+    def mv(self, source, target=None):
         st = get_type(source)
         tt = get_type(target)
 
