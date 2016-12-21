@@ -1,0 +1,57 @@
+{
+  "allegro": {
+    "description": "The FUB 'Allegro' cluster at IMP (http://www.allegro.imp.fu-berlin.de).",
+    "notes": "Always set the ``project`` attribute in the ComputePilotDescription or the pilot will fail.",
+    "schemas": [
+      "gsissh",
+      "ssh"
+    ],
+    "mandatory_args": [
+      "project"
+    ],
+    "gsissh": {
+      "job_manager_endpoint": "slurm+gsissh://allegro.imp.fu-berlin.de:2222/",
+      "filesystem_endpoint": "gsisftp://allegro.imp.fu-berlin.de:2222/"
+    },
+    "ssh": {
+      "job_manager_endpoint": "slurm+ssh://allegro.imp.fu-berlin.de/",
+      "filesystem_endpoint": "sftp://allegro.imp.fu-berlin.de/"
+    },
+    "default_queue": "normal",
+    "lrms": "SLURM",
+    "agent_type": "multicore",
+    "agent_scheduler": "CONTINUOUS",
+    "agent_spawner": "POPEN",
+    "agent_launch_method": "SSH",
+    "task_launch_method": "SSH",
+    "mpi_launch_method": "MPIRUN_RSH",
+    "pre_bootstrap_1": [
+      "module purge",
+      "module load TACC",
+      "module load intel/15.0.2",
+      "module load python/2.7.12",
+      "module unload xalt",
+      "source ~train00/ssi_sourceme",
+      "export TACC_DELETE_FILES=TRUE"
+    ],
+    "default_remote_workdir": "$HOME",
+    "valid_roots": [
+      "/scratch",
+      "$SCRATCH",
+      "/work",
+      "$WORK"
+    ],
+    "rp_version": "local",
+    "virtenv": "%(global_sandbox)s/ve_stampede",
+    "virtenv_mode": "create",
+    "python_dist": "default",
+    "export_to_cu": [
+      "LMOD_CMD",
+      "LMOD_SYSTEM_DEFAULT_MODULES",
+      "LD_LIBRARY_PATH"
+    ],
+    "cu_pre_exec": [
+      "module restore"
+    ]
+  }
+}
