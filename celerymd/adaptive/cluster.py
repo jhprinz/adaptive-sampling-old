@@ -27,6 +27,23 @@ class Trajectory(object):
     def __len__(self):
         return self.length
 
+    def __getitem__(self, item):
+        if item >=0 and item < len(self):
+            return Frame(self, item)
+        else:
+            return None
+
+
+class Frame(object):
+    """
+    Represents a frame
+    """
+    def __init__(self, trajectory, frame):
+        self.trajectory = trajectory
+        self.frame = frame
+
+
+
 
 class MDCluster(object):
     """
@@ -67,6 +84,9 @@ class MDCluster(object):
         self.resource = resource
 
         self.trajectories = dict()
+        self.trajectories_staged = dict()
+
+        self.trajectory_count = 0
 
         if resource is not None:
             self.add_resource(resource)
@@ -103,20 +123,22 @@ class MDCluster(object):
         return '{system}-{uid}.{ext}'.format(
             system=self.system, uid=uid, ext=ext)
 
-    def get_all_trajectories(self):
-        pass
+    def get_new_trajectory_name(self):
+        fn = self.to_filename(self.trajectory_count, self.engine.trajectory_ext)
+        self.trajectory_count += 1
+        return 'shared://' + fn
 
     @property
     def pending(self):
-        return self.cus_pending
+        return []
 
     @property
     def running(self):
-        return self.cus_running
+        return []
 
     @property
     def finished(self):
-        return self.cus_finished
+        return []
 
     def unit_callback(self, unit, state):
         """
@@ -160,4 +182,5 @@ class MDCluster(object):
             t = Trajectory(
                 self.resource, location=location, length=length, unit=unit)
 
+            del self.trajectories_staged[location]
             self.trajectories[location] = t

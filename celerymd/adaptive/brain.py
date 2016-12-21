@@ -1,30 +1,26 @@
 # Decide what to do with the current model
 
-import radical.pilot as rp
+import random
 
 
 class Brain(object):
-    def __init__(self, engine, modeller):
-        self.engine = engine
-        self.modeller = modeller
-        self.simulation_pm = None
-        self.analysis_pm = None
-        self.initial_confs = {}
+    def __init__(self, cluster):
+        self.cluster = cluster
 
     def analyze(self):
         """
         Update the model and trigger necessary tasks
 
         """
-        pass
+        _ = self.cluster
 
-    def get_initial_configurations(self, n):
+    def get_initial_configurations(self, num):
         """
-        Create n pdf with initial configurations
+        Create n pdb with initial configurations
 
         Parameters
         ----------
-        n : int
+        num : int
             number of initial configurations to be drawn
 
         Returns
@@ -32,89 +28,42 @@ class Brain(object):
         list of str
             the list of filenames
         """
-        return [] * n
 
-    def get_simulation_cu(self, n):
-        files = self.get_initial_configurations(n)
-        cuds = []
-        for pdb_file in files:
-            cuds.append(
-                self.engine.get_cud(pdb_file)
-            )
+        # pick at random
 
-        return cuds
+        trajectories = self.cluster.trajectories
 
+        frames = []
 
-class MDStatus(object):
-    """
-    Class to handle the status of a list of MD simulations in RP
+        for n in range(num):
+            traj = random.choice(trajectories)
+            frame = random.randint(len(traj))
 
-    We agree that
+            frames.append(traj[frame])
 
-    1. the initial configuration is stored as `{system}-{uid}.pdb`
-    2. the resulting trajectory is stored as `{system}-{uid}.xtc
-    3. the used conf file is stored as `{system}-{uid}.conf
+        return frames
 
-    """
+    def get_simulation_cu(self, num):
+        if self.cluster.trajectories:
+            # seems we have at least on trajectory available
 
-    def __init__(self, pilot_mngr, unit_mngr):
-        self.system = 'ntl9'
-        self.pilot_mngr = pilot_mngr
-        self.unit_mngr = unit_mngr
+            frames = self.get_initial_configurations(num)
+            cuds = []
+            for frame in frames:
+                target = self.cluster.get_new_trajectory_name()
+                cuds.append(
+                    self.cluster.engine.get_cmd_trajectory_frame(
+                        frame.location, frame, target)
+                )
+                self.cluster.trajectories_stages[target] = frame
 
-        self.cus = dict()   # {uid : ComputeUnit}
+            return cuds
+        else:
+            cuds = []
+            for run in range(num):
+                target = self.cluster.engine.get_new_trajectory_name()
+                cuds.append(
+                    self.cluster.engine.get_cmd_run_initial(target)
+                )
 
-        self.cus_pending = set()
-        self.cus_running = set()
-        self.cus_finished = set()
-        self.cus_failed = set()
-
-    def to_filename(self, uid, ext):
-        return '{system}-{uid}.{ext}'.format(
-            system=self.system, uid=id, ext=ext)
-
-    def get_all_trajectories(self):
-        pass
-
-    @property
-    def pending(self):
-        return self.cus_pending
-
-    @property
-    def running(self):
-        return self.cus_running
-
-    @property
-    def finished(self):
-        return self.cus_finished
-
-    def unit_callback(self, unit, status):
-        """
-        The callback for simulation units
-
-        This will update the list of finished jobs and existing trajectories
-
-        Parameters
-        ----------
-        unit
-        status
-
-        Returns
-        -------
-
-        """
-        pass
-
-    def pilot_callback(self, pilot, state):
-        """
-
-        Parameters
-        ----------
-        pilot
-        state
-
-        Returns
-        -------
-
-        """
-        pass
+            return cuds

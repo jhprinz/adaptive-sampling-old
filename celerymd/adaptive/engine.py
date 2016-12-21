@@ -37,6 +37,7 @@ class Engine(object):
 
 class ACEMDEngine(Engine):
     executable = 'acemd'
+    trajectory_ext = '.xtc'
 
     def __init__(self, conf_file, pdb_file):
         super(ACEMDEngine, self).__init__()
@@ -51,6 +52,32 @@ class ACEMDEngine(Engine):
         cmd = self.cluster.copy(self.pdb_file, self.pdb_file_link)
 
         return cmd.input_staging
+
+    def get_cmd_run_initial(self, target):
+        """
+        Create a compute unit description to be run
+
+        Parameters
+        ----------
+        target : str
+            location of the created target trajectory
+
+        Returns
+        -------
+
+        """
+        cmd  = self.cluster.link(self.conf_file_link)
+        cmd += self.cluster.link(self.pdb_file_link)
+
+        cmd += BashCommand(
+            'acemd',
+            [
+                self.conf_file
+            ])
+
+        cmd += self.cluster.move('output.xtc', target)
+
+        return cmd
 
     def get_cmd_pdb(self, pdb_file):
         """
