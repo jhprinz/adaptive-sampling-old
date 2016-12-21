@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-__copyright__ = 'Copyright 2013-2014, http://radical.rutgers.edu'
-__license__ = 'MIT'
-
 import os
 import sys
 
@@ -57,11 +54,6 @@ if __name__ == '__main__':
     brain = Brain(cluster)
 
     with cluster:
-        if True:
-            cluster.add_resource()
-        else:
-            cluster.add_resource()
-
         report.ok('>>ok\n')
 
         report.header('submit units')
@@ -100,13 +92,13 @@ if __name__ == '__main__':
         # assigning ComputeUnits to the ComputePilots.
 
         report.header('gather results')
-        umgr.wait_units()
+        # umgr.wait_units()
 
         report.info('\n')
-        for unit in units:
-            report.plain('  * %s: %s, exit: %3s, out: %s\n' \
-                         % (unit.uid, unit.state[:4],
-                            unit.exit_code, unit.stdout.strip()[:35]))
+        # for unit in units:
+        #     report.plain('  * %s: %s, exit: %3s, out: %s\n'
+        #                  % (unit.uid, unit.state[:4],
+        #                     unit.exit_code, unit.stdout.strip()[:35]))
 
     report.header()
 

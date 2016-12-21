@@ -11,6 +11,13 @@ class MDCluster(object):
     2. the resulting trajectory is stored as `{system}-{uid}.xtc
     3. the used conf file is stored as `{system}-{uid}.conf
 
+    A cluster has various places to put a file, we have
+
+    1. the location at the application level
+    2. the location at the shared file system
+    3. the location at the node in the working directory
+
+
     """
     def __init__(self, system, engine=None, resource=None, report=None):
         self.report = report
@@ -29,6 +36,8 @@ class MDCluster(object):
         self.cus_running = set()
         self.cus_finished = set()
         self.cus_failed = set()
+
+        self.resource = resource
 
         if resource is not None:
             self.add_resource(resource)
@@ -53,9 +62,9 @@ class MDCluster(object):
 
         return fail
 
-    def add_resource(self, pdesc):
+    def add_resource(self, resource):
         self.report.header('submit pilots')
-        self.pilot = self.umgr.add_pilots(pdesc)
+        self.pilot = self.umgr.add_pilots(resource.desc)
         self.umgr.register_callback(self.unit_callback)
 
         self.report.info('stage shared data from engine')
@@ -63,7 +72,7 @@ class MDCluster(object):
 
     def to_filename(self, uid, ext):
         return '{system}-{uid}.{ext}'.format(
-            system=self.system, uid=id, ext=ext)
+            system=self.system, uid=uid, ext=ext)
 
     def get_all_trajectories(self):
         pass
@@ -80,7 +89,7 @@ class MDCluster(object):
     def finished(self):
         return self.cus_finished
 
-    def unit_callback(self, unit, status):
+    def unit_callback(self, unit, state):
         """
         The callback for simulation units
 
@@ -89,57 +98,28 @@ class MDCluster(object):
         Parameters
         ----------
         unit
-        status
-
-        Returns
-        -------
-
-        """
-        pass
-
-    def pilot_callback(self, pilot, state):
-        """
-
-        Parameters
-        ----------
-        pilot
         state
 
         Returns
         -------
 
         """
-        pass
 
+        print "[Callback]: unit %s on %s: %s." % (
+            unit.uid, unit.pilot_id, state)
 
-class Resource(object):
-    pass
+        self.cus.add(unit)
 
+        if not unit:
+            return
 
-def AllegroCluster(runtime, queue, cores):
-    # question: This splitting in resource does not make sense to me
-    # I would say that these should be coupled with the resource definition
-
-    pd = {
-        'resource': 'fub.allegro',
-        'runtime': runtime,
-        'exit_on_error': True,
-        'project': None,
-        'queue': queue,
-        'access_schema': 'ssh',
-        'cores': cores,
-    }
-    return rp.ComputePilotDescription(pd)
-
-
-def LocalCluster(runtime, cores):
-    pd = {
-        'resource': 'local.localhost',
-        'runtime': runtime,
-        'exit_on_error': True,
-        'project': None,
-        'queue': None,
-        'access_schema': 'local',
-        'cores': cores,
-    }
-    return rp.ComputePilotDescription(pd)
+        if state in [rp.FAILED, rp.DONE, rp.CANCELED]:
+            print "* unit %s (%s) state %s (%s) %s - %s, out/err: %s / %s" \
+                  % (unit.uid,
+                     unit.execution_locations,
+                     unit.state,
+                     unit.exit_code,
+                     unit.start_time,
+                     unit.stop_time,
+                     unit.stdout,
+                     unit.stderr)

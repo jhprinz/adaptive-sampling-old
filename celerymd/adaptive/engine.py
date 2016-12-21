@@ -3,8 +3,13 @@
 import radical.pilot as rp
 import os
 
+from bash import SingleCommand
+
 
 class Engine(object):
+
+    executable = ''
+
     def get_staging(self):
         """
         Create the necessary staging commands to get all files to the node
@@ -18,10 +23,6 @@ class Engine(object):
     @property
     def arguments(self):
         return []
-
-    @property
-    def executable(self):
-        return ''
 
     def transfer_from_stage(self, source):
         target = os.path.basename(source)
@@ -69,6 +70,8 @@ class Engine(object):
 
 
 class ACEMDEngine(Engine):
+    executable = 'acemd'
+
     def __init__(self, conf_file, pdb_file):
         super(ACEMDEngine, self).__init__()
         self.conf_file = conf_file
@@ -78,12 +81,6 @@ class ACEMDEngine(Engine):
         return [
             self.transfer_to_stage(self.conf_file),
         ]
-
-    @property
-    def executable(self):
-        # use bash for multiple commands
-        return 'bin/bash'
-        # return '/usr/bin/acemd'
 
     @property
     def arguments(self):
