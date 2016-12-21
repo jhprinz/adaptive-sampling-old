@@ -19,7 +19,8 @@ import radical.utils as ru
 
 from engine import ACEMDEngine
 from brain import Brain
-from cluster import MDCluster, AllegroCluster, LocalCluster
+from cluster import MDCluster
+from resource import AllegroCluster, LocalCluster
 
 
 if __name__ == '__main__':

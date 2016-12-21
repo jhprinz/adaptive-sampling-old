@@ -1,5 +1,32 @@
 import radical.pilot as rp
 
+from util import get_type
+
+
+class Trajectory(object):
+    """
+    Represents a trajectory file on the cluster
+    """
+    def __init__(self, resource, location, length, extension=None, unit=None):
+        self.resource = resource
+        self.location = location
+        if format is None:
+            self.extension = location.split('.')[-1]
+        else:
+            self.extension = extension
+
+        self.format = self.format.lower()
+        self.length = length
+        self.unit = unit
+
+    def path_on_resource(self):
+        lt = get_type(self.location)
+        if lt in ['unit', 'shared']:
+            return self.location.replace('shared://', self.resource.path_to_shared)
+
+    def __len__(self):
+        return self.length
+
 
 class MDCluster(object):
     """
@@ -39,6 +66,8 @@ class MDCluster(object):
 
         self.resource = resource
 
+        self.trajectories = dict()
+
         if resource is not None:
             self.add_resource(resource)
 
@@ -68,7 +97,7 @@ class MDCluster(object):
         self.umgr.register_callback(self.unit_callback)
 
         self.report.info('stage shared data from engine')
-        self.pilot.stage_in(self.engine.get_staging())
+        self.pilot.stage_in(self.engine.get_initial_staging())
 
     def to_filename(self, uid, ext):
         return '{system}-{uid}.{ext}'.format(
@@ -113,7 +142,7 @@ class MDCluster(object):
         if not unit:
             return
 
-        if state in [rp.FAILED, rp.DONE, rp.CANCELED]:
+        if state in [rp.FAILED, rp.CANCELED]:
             print "* unit %s (%s) state %s (%s) %s - %s, out/err: %s / %s" \
                   % (unit.uid,
                      unit.execution_locations,
@@ -123,3 +152,12 @@ class MDCluster(object):
                      unit.stop_time,
                      unit.stdout,
                      unit.stderr)
+        elif state in [rp.DONE]:
+            # seems we have a new trajectory. Let's bookmark it
+
+            location = 0
+            length = 0
+            t = Trajectory(
+                self.resource, location=location, length=length, unit=unit)
+
+            self.trajectories[location] = t

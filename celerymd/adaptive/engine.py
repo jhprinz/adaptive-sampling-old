@@ -1,16 +1,17 @@
 # Create compute units for various simulation tools
 
 import radical.pilot as rp
-import os
 
-from bash import SingleCommand
+from bash import BashCommand
+
+import os
 
 
 class Engine(object):
+    def __init__(self, cluster=None):
+        self.cluster = cluster
 
-    executable = ''
-
-    def get_staging(self):
+    def get_initial_staging(self):
         """
         Create the necessary staging commands to get all files to the node
 
@@ -19,41 +20,6 @@ class Engine(object):
 
         """
         return []
-
-    @property
-    def arguments(self):
-        return []
-
-    def transfer_from_stage(self, source):
-        target = os.path.basename(source)
-        return {
-            'source': 'staging:///%s' % target,
-            'target': target,
-            'action': rp.TRANSFER
-         }
-
-    def transfer_to(self, source):
-        target = os.path.basename(source)
-        return {
-            'source': 'file://%s' % source,
-            'target': target,
-            'action': rp.TRANSFER
-         }
-
-    def link_from_stage(self, source):
-        target = os.path.basename(source)
-        return {
-            'source': 'staging:///%s' % target,
-            'target': target,
-            'action': rp.LINK
-         }
-
-    def transfer_to_stage(self, source):
-        target = os.path.basename(source)
-        return {
-            'source': 'file://%s' % source,
-            'target': 'staging:///%s' % target,
-            'action': rp.TRANSFER}
 
     def get_cud(self, pdb_file):
         """
@@ -77,16 +43,16 @@ class ACEMDEngine(Engine):
         self.conf_file = conf_file
         self.pdb_file = pdb_file
 
-    def get_staging(self):
-        return [
-            self.transfer_to_stage(self.conf_file),
-        ]
+        # names in the staging area
+        self.pdb_file_link = 'staging://' + os.path.basename(self.pdb_file)
+        self.conf_file_link = 'staging://' + os.path.basename(self.conf_file)
 
-    @property
-    def arguments(self):
-        return ['-l', '-c']
+    def get_initial_staging(self):
+        cmd = self.cluster.copy(self.pdb_file, self.pdb_file_link)
 
-    def get_cud_pdb(self, pdb_file):
+        return cmd.input_staging
+
+    def get_cmd_pdb(self, pdb_file):
         """
         Create a compute unit description to be run
 
@@ -97,56 +63,58 @@ class ACEMDEngine(Engine):
         -------
 
         """
-        cud = rp.ComputeUnitDescription()
-        cud.executable = self.executable
-        cud.arguments = self.arguments + [os.path.basename(self.conf_file)]
-        cud.input_staging = [
-            self.link_from_stage(self.conf_file),
-            self.transfer_to(pdb_file)
-        ]
+        cmd  = self.cluster.link(self.conf_file)
+        cmd += self.cluster.copy(pdb_file)
 
-        return cud
+        cmd += BashCommand(
+            'acemd',
+            [
+                self.conf_file
+            ])
 
-    def get_cud_trajectory_frame(self, trajectory_file, frame):
+        return cmd
+
+    def get_cmd_trajectory_frame(self, source, frame, target):
         """
-        Create a compute unit description to be run
+        Create a command that runs from a fram in a trajectory
 
         Parameters
         ----------
+        source : str
+            location of the input trajectory, usually starts with `shared://`
+            and lists the location on the shared space
+        frame : int
+            the integer index starting from 0 in the input trajectory
+        target : str
+            location of the target trajectory, usually starts with `shared://`
 
         Returns
         -------
-
+        Command
         """
 
         # todo: add the extraction of a single frame using a little python tool
         # question: how to run multiple commands with MPU
 
+        cmd  = self.cluster.link(self.conf_file_link)
+        cmd += self.cluster.link(self.pdb_file_link)
+        cmd += self.cluster.link(source, 'input.xtc')
+
         # might use mdconvert from mdtraj for now
-        args = [
-            'mdconvert'
-            '-o', 'initial.pdb',
-            '-i', '%d' % frame,
-            trajectory_file,
-            self.pdb_file,
-        ]
+        cmd += BashCommand(
+            'mdconvert',
+            [
+                '-o', 'initial.pdb',
+                '-i', '%d' % frame,
+                'input.xtc',
+                self.pdb_file,
+            ])
 
-        # and
-        args += ['&&']
-
-        # acemd run
-        args += [
+        cmd += BashCommand(
             'acemd',
-            self.conf_file
-        ]
+            [
+                self.conf_file
+            ])
+        cmd += self.cluster.move('output.xtc', target)
 
-        cud = rp.ComputeUnitDescription()
-        cud.executable = self.executable
-        cud.arguments = args + self.arguments + [os.path.basename(self.conf_file)]
-        cud.input_staging = [
-            self.link_from_stage(self.conf_file),
-            self.link_from_stage(self.pdb_file),
-            self.transfer_to(trajectory_file)
-        ]
-
-        return cud
+        return cmd

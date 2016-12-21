@@ -64,31 +64,51 @@ class Command(object):
         cud.output_staging = self.output_staging
 
 
-class SingleCommand(Command):
-    def __init__(self, executable, args, input_staging=None, output_staging=None):
-        super(SingleCommand, self).__init__()
-        self.executable = executable
-        self.args = args
-        if input_staging is None:
-            self._input_staging = []
-        else:
-            self._input_staging = input_staging
+class StagingCommand(Command):
+    def __init__(self, staging, mode=rp.STAGING_INPUT):
+        super(StagingCommand, self).__init__()
 
-        if output_staging is None:
-            self._output_staging = []
-        else:
-            self._output_staging = output_staging
+        self.mode = mode
+        self.staging = staging
 
-    def __iter__(self):
-        return iter([self.executable] + list(self.args))
+        if mode not in [rp.STAGING_INPUT, rp.STAGING_OUTPUT]:
+            raise ValueError('Can only use rp.STAGING_INPUT or rp.STAGING_OUTPUT.')
+
+    @property
+    def source(self):
+        return self.staging['source']
+
+    @property
+    def target(self):
+        return self.staging['target']
+
+    @property
+    def action(self):
+        return self.staging['action']
 
     @property
     def input_staging(self):
-        return self._input_staging
+        if self.mode == rp.STAGING_INPUT:
+            return self.staging
+        else:
+            return []
 
     @property
     def output_staging(self):
-        return self._output_staging
+        if self.mode == rp.STAGING_OUTPUT:
+            return self.staging
+        else:
+            return []
+
+
+class BashCommand(Command):
+    def __init__(self, executable, args):
+        super(BashCommand, self).__init__()
+        self.executable = executable
+        self.args = args
+
+    def __iter__(self):
+        return iter([self.executable] + list(self.args))
 
 
 class RepeatCommand(Command):
@@ -116,7 +136,12 @@ class ChainCommand(Command):
         self.command2 = command2
 
     def __iter__(self):
-        return iter(list(self.command1) + ['&&'] + list(self.command2))
+        c1 = list(self.command1)
+        c2 = list(self.command2)
+        if c1 and c2:
+            return iter(c1 + ['&&'] + c2)
+        else:
+            return iter(c1 + c2)
 
     @property
     def input_staging(self):
